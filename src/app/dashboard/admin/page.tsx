@@ -46,10 +46,14 @@ type Service = {
 	image: string;
 	samples: string[];
 	tiers: { quick: number; decent: number; topper: number };
+	tierOptions?: { name: string; price: number }[];
 };
+
+type RequestRecord = { id: number; title: string; details: string; status: "pending" | "approved" | "rejected" };
 
 export default function AdminDashboard() {
 	const [services, setServices] = useState<Service[]>(initialServices);
+	const [requests, setRequests] = useState<RequestRecord[]>([]);
 	const [showForm, setShowForm] = useState(false);
 	const [name, setName] = useState("");
 	const [price, setPrice] = useState("");
@@ -59,21 +63,32 @@ export default function AdminDashboard() {
 	const [decentPrice, setDecentPrice] = useState("");
 	const [topperPrice, setTopperPrice] = useState("");
 	const [hydrated, setHydrated] = useState(false);
+	const [tierCount, setTierCount] = useState(3);
+	const [tierNames, setTierNames] = useState(["Quick", "Decent", "Topper"]);
+	const [tierPrices, setTierPrices] = useState(["", "", ""]);
 
 	useEffect(() => {
 		const saved = localStorage.getItem("campuscrew-services");
 		if (saved) setServices(JSON.parse(saved));
+		const savedRequests = localStorage.getItem("campuscrew-requests");
+		if (savedRequests) setRequests(JSON.parse(savedRequests));
 		setHydrated(true);
 	}, []);
 
 	useEffect(() => {
-		if (hydrated)
+		if (hydrated) {
 			localStorage.setItem("campuscrew-services", JSON.stringify(services));
-	}, [services, hydrated]);
+			localStorage.setItem("campuscrew-requests", JSON.stringify(requests));
+		}
+	}, [services, requests, hydrated]);
 
 	function addService() {
 		if (!name.trim() || !price) return;
 		const basePrice = Number(price);
+		const tierOptions = tierNames.slice(0, tierCount).map((tierName, index) => ({
+			name: tierName.trim() || `Tier ${index + 1}`,
+			price: Number(tierPrices[index]) || basePrice * (index + 1),
+		}));
 		setServices([
 			...services,
 			{
@@ -87,6 +102,7 @@ export default function AdminDashboard() {
 					decent: Number(decentPrice) || Math.round(basePrice * 1.5),
 					topper: Number(topperPrice) || Math.round(basePrice * 2),
 				},
+				tierOptions,
 			},
 		]);
 		setName("");
@@ -96,6 +112,9 @@ export default function AdminDashboard() {
 		setTopperPrice("");
 		setImage("");
 		setSamples([]);
+		setTierCount(3);
+		setTierNames(["Quick", "Decent", "Topper"]);
+		setTierPrices(["", "", ""]);
 		setShowForm(false);
 	}
 
@@ -265,6 +284,63 @@ export default function AdminDashboard() {
 								</div>
 							</div>
 						</div>
+						<div className="rounded-xl border border-slate-200 bg-white p-4">
+							<div className="flex items-center justify-between">
+								<label className="text-sm font-bold">
+									Number of tiers
+								</label>
+								<select
+									value={tierCount}
+									onChange={(event) =>
+										setTierCount(Number(event.target.value))
+									}
+									className="h-10 rounded-lg border border-slate-200 px-3"
+								>
+									<option value={1}>1 tier</option>
+									<option value={2}>2 tiers</option>
+									<option value={3}>3 tiers</option>
+									<option value={4}>4 tiers</option>
+									<option value={5}>5 tiers</option>
+								</select>
+							</div>
+							<div className="mt-3 grid gap-2 sm:grid-cols-2">
+								{Array.from({ length: tierCount }).map((_, index) => (
+									<div key={index} className="grid grid-cols-2 gap-2">
+										<input
+											value={tierNames[index] ?? ""}
+											onChange={(event) =>
+												setTierNames((current) =>
+													current.map((value, i) =>
+														i === index
+															? event.target.value
+															: value
+													)
+												)
+											}
+											placeholder={`Tier ${
+												index + 1
+											} name`}
+											className="h-10 rounded-lg border border-slate-200 px-3 outline-none"
+										/>
+										<input
+											value={tierPrices[index] ?? ""}
+											onChange={(event) =>
+												setTierPrices((current) =>
+													current.map((value, i) =>
+														i === index
+															? event.target.value
+															: value
+													)
+												)
+											}
+											type="number"
+											placeholder="Price in ₹"
+											className="h-10 rounded-lg border border-slate-200 px-3 outline-none"
+										/>
+									</div>
+								))}
+							</div>
+						</div>
 					</div>
 				)}
 
@@ -329,6 +405,67 @@ export default function AdminDashboard() {
 							</div>
 						</div>
 					))}
+				</div>
+
+				<div className="mt-8">
+					<div className="mb-3 flex items-center justify-between">
+						<h2 className="text-xl font-black">Requested services</h2>
+						<span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+							{requests.filter((request) => request.status === "pending").length}{" "}
+							pending
+						</span>
+					</div>
+					<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+						{requests.length ? (
+							requests.map((request) => (
+								<div
+									key={request.id}
+									className="flex items-center justify-between border-b border-slate-100 p-5 last:border-0"
+								>
+									<div>
+										<b>{request.title}</b>
+										<p className="mt-1 text-sm text-slate-500">
+											{request.details}
+										</p>
+									</div>
+									<div className="flex gap-2">
+										<button
+											onClick={() =>
+												setRequests(
+													requests.map((item) =>
+														item.id === request.id
+															? { ...item, status: "approved" }
+															: item
+													)
+												)
+											}
+											className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700"
+										>
+											Approve
+										</button>
+										<button
+											onClick={() =>
+												setRequests(
+													requests.map((item) =>
+														item.id === request.id
+															? { ...item, status: "rejected" }
+															: item
+													)
+												)
+											}
+											className="rounded-lg bg-red-50 px-3 py-2 text-xs font-bold text-red-700"
+										>
+											Reject
+										</button>
+									</div>
+								</div>
+							))
+						) : (
+							<p className="p-5 text-sm text-slate-500">
+								No custom requests yet.
+							</p>
+						)}
+					</div>
 				</div>
 			</section>
 		</main>

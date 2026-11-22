@@ -21,20 +21,28 @@ export default function Home() {
 	const [review, setReview] = useState("");
 	const [showReview, setShowReview] = useState(false);
 	const [tier, setTier] = useState<"quick" | "decent" | "topper">("quick");
+	const [selectedTierIndex, setSelectedTierIndex] = useState(0);
 	const [purchased, setPurchased] = useState(false);
+	const [showRequest, setShowRequest] = useState(false);
+	const [requestTitle, setRequestTitle] = useState("");
+	const [requestDetails, setRequestDetails] = useState("");
+	const [showChat, setShowChat] = useState(false);
+	const [chatText, setChatText] = useState("");
+	const [chatMessages, setChatMessages] = useState<string[]>(["Worker: Hi! I've been assigned to your order. Let's keep this chat private."]);
 
 	useEffect(() => {
 		const saved = localStorage.getItem("campuscrew-services");
 		if (saved) {
 			const adminServices = JSON.parse(saved)
 				.filter((service: { active: boolean }) => service.active)
-				.map((service: { name: string; price: number; image: string; samples?: string[]; tiers?: { quick: number; decent: number; topper: number } }) => ({
+				.map((service: { name: string; price: number; image: string; samples?: string[]; tierOptions?: { name: string; price: number }[]; tiers?: { quick: number; decent: number; topper: number } }) => ({
 					name: service.name,
 					title: service.name,
 					description: "Available student service",
 					price: service.price,
 					image: service.image,
 					samples: service.samples ?? [],
+					tierOptions: service.tierOptions,
 					tiers: service.tiers ?? { quick: service.price, decent: Math.round(service.price * 1.5), topper: Math.round(service.price * 2) },
 					icon: GraduationCap,
 				}));
@@ -56,7 +64,7 @@ export default function Home() {
 					<Link href="/auth/login" className="px-3 py-2 text-sm font-semibold">
 						Login
 					</Link>
-					<Link href="/dashboard/admin" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
+					<Link href="/admin/login" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
 						Admin
 					</Link>
 				</div>
@@ -83,9 +91,11 @@ export default function Home() {
 									<div className="flex items-start justify-between"><h2 className="font-bold">{service.title}</h2><span className="text-lg font-black">From ₹{service.tiers?.quick ?? service.price}</span></div>
 									<p className="mt-1 min-h-10 text-sm text-slate-500">{service.description}</p>
 									<div className="mt-4 grid grid-cols-3 gap-2">
-										<div className="rounded-lg bg-slate-50 p-2"><span className="block text-[10px] uppercase text-slate-400">Quick</span><b className="text-sm">₹{service.tiers.quick}</b></div>
-										<div className="rounded-lg bg-sky-50 p-2"><span className="block text-[10px] uppercase text-sky-500">Decent</span><b className="text-sm">₹{service.tiers.decent}</b></div>
-										<div className="rounded-lg bg-violet-50 p-2"><span className="block text-[10px] uppercase text-violet-500">Topper</span><b className="text-sm">₹{service.tiers.topper}</b></div>
+										{(service.tierOptions?.slice(0, 5) ?? [
+											{ name: "Quick", price: service.tiers.quick },
+											{ name: "Decent", price: service.tiers.decent },
+											{ name: "Topper", price: service.tiers.topper },
+										]).map((option) => <div key={option.name} className="rounded-lg bg-slate-50 p-2"><span className="block text-[10px] uppercase text-slate-400">{option.name}</span><b className="text-sm">₹{option.price}</b></div>)}
 									</div>
 									<div className="mt-4 grid grid-cols-3 gap-2">
 										{service.samples.length > 0 ? service.samples.map((sample, index) => (
@@ -138,25 +148,19 @@ export default function Home() {
 						<div className="mt-4">
 							<p className="text-sm font-bold">Select a tier</p>
 							<div className="mt-2 flex gap-2">
-								{Object.entries(selected.tiers).map(([key, value]) => (
-									<button
-										key={key}
-										onClick={() => setTier(key as "quick" | "decent" | "topper")}
-										className={`flex-1 rounded-xl border px-3 py-2 text-sm font-bold transition-all ${
-											tier === (key as "quick" | "decent" | "topper")
-												? "border-indigo-600 bg-indigo-50 text-indigo-700"
-												: "border-slate-200 text-slate-950"
-										}`}
-									>
-										{key} (₹{value})
-									</button>
+								{(selected.tierOptions ?? [
+									{ name: "Quick", price: selected.tiers.quick },
+									{ name: "Decent", price: selected.tiers.decent },
+									{ name: "Topper", price: selected.tiers.topper },
+								]).map((option, index) => (
+									<button key={option.name} onClick={() => setSelectedTierIndex(index)} className={`flex-1 rounded-xl border px-3 py-2 text-sm font-bold ${selectedTierIndex === index ? "border-indigo-600 bg-indigo-50 text-indigo-700" : "border-slate-200"}`}>{option.name} (₹{option.price})</button>
 								))}
 							</div>
 						</div>
 						<div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
 							<div>
 								<p className="text-xs text-slate-400">Amount to pay</p>
-								<p className="text-2xl font-black">₹{selected.tiers[tier]}</p>
+								<p className="text-2xl font-black">₹{(selected.tierOptions ?? [{ name: "Quick", price: selected.tiers.quick }, { name: "Decent", price: selected.tiers.decent }, { name: "Topper", price: selected.tiers.topper }])[selectedTierIndex]?.price ?? 0}</p>
 							</div>
 							<button
 								onClick={() => {
@@ -225,6 +229,115 @@ export default function Home() {
 							</button>
 							<button
 								onClick={() => setShowReview(false)}
+								className="flex h-10 items-center gap-2 rounded-xl bg-slate-200 px-4 text-sm font-semibold text-slate-950"
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{showRequest && (
+				<div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5">
+					<div className="w-full max-w-md rounded-3xl bg-white p-6">
+						<div className="flex items-center justify-between">
+							<h2 className="text-xl font-black">Custom Service Request</h2>
+							<button
+								onClick={() => setShowRequest(false)}
+								className="grid h-9 w-9 place-items-center rounded-full bg-slate-100"
+							>
+								×
+							</button>
+						</div>
+						<p className="mt-4 text-sm text-slate-500">
+							Need a custom service? Fill out the details below, and we'll get back to you.
+						</p>
+						<div className="mt-4">
+							<label className="block text-sm font-medium text-slate-700">Request Title</label>
+							<input
+								type="text"
+								value={requestTitle}
+								onChange={(e) => setRequestTitle(e.target.value)}
+								className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+								placeholder="e.g., Math Assignment Help"
+							/>
+						</div>
+						<div className="mt-4">
+							<label className="block text-sm font-medium text-slate-700">Request Details</label>
+							<textarea
+								value={requestDetails}
+								onChange={(e) => setRequestDetails(e.target.value)}
+								className="mt-2 w-full rounded-xl border border-slate-200 p-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+								placeholder="Describe your request in detail..."
+								rows={3}
+							/>
+						</div>
+						<div className="mt-4 flex justify-end gap-2">
+							<button
+								onClick={() => {
+									// Submit request logic here
+									alert("Request submitted! We'll get back to you soon.");
+									setRequestTitle("");
+									setRequestDetails("");
+									setShowRequest(false);
+								}}
+								className="flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white"
+							>
+								<Check size={16} />
+								Submit Request
+							</button>
+							<button
+								onClick={() => setShowRequest(false)}
+								className="flex h-10 items-center gap-2 rounded-xl bg-slate-200 px-4 text-sm font-semibold text-slate-950"
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{showChat && (
+				<div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5">
+					<div className="w-full max-w-md rounded-3xl bg-white p-6">
+						<div className="flex items-center justify-between">
+							<h2 className="text-xl font-black">Order Chat</h2>
+							<button
+								onClick={() => setShowChat(false)}
+								className="grid h-9 w-9 place-items-center rounded-full bg-slate-100"
+							>
+								×
+							</button>
+						</div>
+						<div className="mt-4 max-h-60 overflow-y-auto">
+							{chatMessages.map((msg, index) => (
+								<div key={index} className={`my-2 rounded-lg p-3 text-sm ${msg.startsWith("Worker:") ? "bg-indigo-50 text-indigo-700" : "bg-slate-100 text-slate-950"}`}>
+									{msg}
+								</div>
+							))}
+						</div>
+						<div className="mt-4">
+							<textarea
+								value={chatText}
+								onChange={(e) => setChatText(e.target.value)}
+								className="w-full rounded-xl border border-slate-200 p-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+								placeholder="Type your message here..."
+							/>
+						</div>
+						<div className="mt-4 flex justify-end gap-2">
+							<button
+								onClick={() => {
+									setChatMessages([...chatMessages, `You: ${chatText}`]);
+									setChatText("");
+								}}
+								className="flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white"
+							>
+								<Check size={16} />
+								Send
+							</button>
+							<button
+								onClick={() => setShowChat(false)}
 								className="flex h-10 items-center gap-2 rounded-xl bg-slate-200 px-4 text-sm font-semibold text-slate-950"
 							>
 								Cancel
