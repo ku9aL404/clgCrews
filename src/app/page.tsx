@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Check, Code2, FileText, GraduationCap, Presentation, Printer, Star, Video } from "lucide-react";
 
 const defaultServices = [
-	{ name: "Coding Help", title: "Coding Help", description: "Fix code or understand a concept", price: 299, image: "", samples: [], icon: Code2, tiers: { quick: 299, decent: 499, topper: 799 } },
-	{ name: "Assignment Guidance", title: "Assignment Guidance", description: "Structure and improve your assignment", price: 249, image: "", samples: [], icon: FileText, tiers: { quick: 249, decent: 399, topper: 649 } },
-	{ name: "PPT Design", title: "PPT Design", description: "A clean presentation for your project", price: 199, image: "", samples: [], icon: Presentation, tiers: { quick: 199, decent: 349, topper: 599 } },
-	{ name: "Resume Creation", title: "Resume Creation", description: "A simple, professional student resume", price: 349, image: "", samples: [], icon: GraduationCap, tiers: { quick: 349, decent: 549, topper: 899 } },
-	{ name: "Video Editing", title: "Video Editing", description: "Edit your project or presentation video", price: 399, image: "", samples: [], icon: Video, tiers: { quick: 399, decent: 649, topper: 999 } },
-	{ name: "Printing", title: "Printing", description: "Print and format campus documents", price: 49, image: "", samples: [], icon: Printer, tiers: { quick: 49, decent: 99, topper: 149 } },
+	{ name: "Coding Help", title: "Coding Help", description: "Fix code or understand a concept", price: 299, image: "", samples: [], tierOptions: [{ name: "Quick", price: 299 }, { name: "Decent", price: 499 }, { name: "Topper", price: 799 }], icon: Code2, tiers: { quick: 299, decent: 499, topper: 799 } },
+	{ name: "Assignment Guidance", title: "Assignment Guidance", description: "Structure and improve your assignment", price: 249, image: "", samples: [], tierOptions: [{ name: "Quick", price: 249 }, { name: "Decent", price: 399 }, { name: "Topper", price: 649 }], icon: FileText, tiers: { quick: 249, decent: 399, topper: 649 } },
+	{ name: "PPT Design", title: "PPT Design", description: "A clean presentation for your project", price: 199, image: "", samples: [], tierOptions: [{ name: "Quick", price: 199 }, { name: "Decent", price: 349 }, { name: "Topper", price: 599 }], icon: Presentation, tiers: { quick: 199, decent: 349, topper: 599 } },
+	{ name: "Resume Creation", title: "Resume Creation", description: "A simple, professional student resume", price: 349, image: "", samples: [], tierOptions: [{ name: "Quick", price: 349 }, { name: "Decent", price: 549 }, { name: "Topper", price: 899 }], icon: GraduationCap, tiers: { quick: 349, decent: 549, topper: 899 } },
+	{ name: "Video Editing", title: "Video Editing", description: "Edit your project or presentation video", price: 399, image: "", samples: [], tierOptions: [{ name: "Quick", price: 399 }, { name: "Decent", price: 649 }, { name: "Topper", price: 999 }], icon: Video, tiers: { quick: 399, decent: 649, topper: 999 } },
+	{ name: "Printing", title: "Printing", description: "Print and format campus documents", price: 49, image: "", samples: [], tierOptions: [{ name: "Quick", price: 49 }, { name: "Decent", price: 99 }, { name: "Topper", price: 149 }], icon: Printer, tiers: { quick: 49, decent: 99, topper: 149 } },
 ];
 
 export default function Home() {
