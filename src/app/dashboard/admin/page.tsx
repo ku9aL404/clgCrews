@@ -39,8 +39,17 @@ const initialServices = [
 	},
 ];
 
+type Service = {
+	name: string;
+	price: number;
+	active: boolean;
+	image: string;
+	samples: string[];
+	tiers: { quick: number; decent: number; topper: number };
+};
+
 export default function AdminDashboard() {
-	const [services, setServices] = useState(initialServices);
+	const [services, setServices] = useState<Service[]>(initialServices);
 	const [showForm, setShowForm] = useState(false);
 	const [name, setName] = useState("");
 	const [price, setPrice] = useState("");
