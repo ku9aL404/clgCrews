@@ -13,7 +13,7 @@ export async function proxy(request: NextRequest) {
   const secret = process.env.ADMIN_SESSION_SECRET;
   const cookie = request.cookies.get("campuscrew-admin")?.value;
 
-  if (pathname === "/dashboard/admin") {
+  if (pathname === "/dashboard/admin" || ((pathname === "/admin" || pathname.startsWith("/admin/")) && pathname !== "/admin/login")) {
     if (!secret || !cookie) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
@@ -33,4 +33,4 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/dashboard/admin"] };
+export const config = { matcher: ["/admin", "/admin/:path*", "/dashboard/admin"] };
